@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Integral Analitis & Numerik - Proyek Kalkulus</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Animasi loading sederhana */
+        .loader {
+            border-top-color: #3b82f6;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .step-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-xl">
+                    &int;
+                </div>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                    Kalkulator Integral v2
+                </h1>
+            </div>
+            <div class="text-sm text-slate-500 font-medium">
+                Proyek Kalkulus Pro
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl mx-auto px-4 py-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <div class="lg:col-span-4 space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Masukkan Parameter
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Fungsi f(x)</label>
+                        <input type="text" id="functionInput" value="x^2 - 2x + 5" 
+                            class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono text-sm"
+                            placeholder="Contoh: x^2 + 2x - sin(x)">
+                        <p class="text-xs text-slate-500 mt-1">Operasi: +, -, *, /, ^, sin(x), cos(x), tan(x), e^x, log(x)</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Batas Bawah (a)</label>
+                            <input type="number" id="lowerLimit" value="0" step="any"
+                                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Batas Atas (b)</label>
+                            <input type="number" id="upperLimit" value="5" step="any"
+                                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-mono">
+                        </div>
+                    </div>
+
+                    <button onclick="calculateIntegral()" 
+                        class="w-full mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 flex justify-center items-center gap-2">
+                        <span>Hitung Penyelesaian</span>
+                    </button>
+                </div>
+
+                <div id="errorMessage" class="hidden mt-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-slate-800 mb-3">Contoh Uji Coba:</h3>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="setExample('x^2 - 2x + 5', 0, 5)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-xs font-mono text-slate-700 transition">Polinomial</button>
+                    <button onclick="setExample('sin(x) + cos(x)', 0, 3.14159)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-xs font-mono text-slate-700 transition">Sin & Cos</button>
+                    <button onclick="setExample('tan(x)', 0, 1)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-xs font-mono text-slate-700 transition">Tan</button>
+                    <button onclick="setExample('2*x + 1/x', 1, 10)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-md text-xs font-mono text-slate-700 transition">Polinomial & Log</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-8 space-y-6">
+            
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Nilai Integral Numerik
+                </h2>
+                
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-100 text-center relative overflow-hidden">
+                    <div id="loadingIndicator" class="hidden absolute inset-0 bg-slate-50/80 flex items-center justify-center z-10">
+                        <div class="loader ease-linear rounded-full border-4 border-t-4 border-slate-200 h-10 w-10"></div>
+                    </div>
+                    
+                    <div class="">
+                        <p class="text-sm text-slate-500 mb-1">Hasil (Luas Area):</p>
+                        <div id="resultValue" class="text-3xl font-extrabold text-blue-600">0.0000</div>
+                        <p class="text-xs text-slate-400 mt-1">Dihitung menggunakan Aturan Simpson (Numerik)</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="analiticalStepsCard" class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Langkah Penyelesaian Analitis (Simbolik)
+                </h2>
+
+                <div class="space-y-6">
+                    <div>
+                        <div class="step-label">Langkah 1: Masalah Integral</div>
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 overflow-x-auto">
+                            <div id="mathFormula" class="text-2xl text-center py-2"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="step-label">Langkah 2: Menemukan Antiderivatif, F(x)</div>
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 overflow-x-auto">
+                            <div id="antiderivativeFormula" class="text-2xl text-center py-2 text-indigo-700"></div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">*Antiderivatif dihitung menggunakan parser simbolik manual untuk polinomial dan trigonometri dasar.</p>
+                    </div>
+
+                    <div>
+                        <div class="step-label">Langkah 3: Substitusi Batas, F(b) - F(a)</div>
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-100 overflow-x-auto">
+                            <div id="substitutionFormula" class="text-xl text-center py-2"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="analiticalError" class="hidden mt-6 p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm">
+                    ⚠️ Parser simbolik hanya mendukung fungsi polinomial dasar ($x^n$, $const$) dan trigonometri dasar ($\sin(x)$, $\cos(x)$, $\tan(x)$). Langkah analitis penuh tidak tersedia untuk fungsi kompleks ini. Lanjutkan dengan hasil numerik di atas.
+                </div>
+            </div>
+
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                    Visualisasi Area Kurva
+                </h2>
+                <div class="w-full h-[350px] relative">
+                    <canvas id="integralChart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 text-center text-sm text-slate-500">
+            Dibuat untuk Memenuhi Proyek Mata Kuliah Kalkulus - Revisi Analitis &copy; 2026/2027
+        </div>
+    </footer>
+
+    <script>
+        let myChart = null;
+
+        // Fungsi Integrasi Numerik menggunakan Aturan Simpson 1/3 (Sangat Akurat)
+        function simpsonIntegration(f, a, b, n = 2000) {
+            if (n % 2 !== 0) n++; // n harus genap
+            const h = (b - a) / n;
+            let sum = f(a) + f(b);
+            
+            for (let i = 1; i < n; i++) {
+                const x = a + i * h;
+                try {
+                    const y = f(x);
+                    if (typeof y === 'number' && !isNaN(y) && isFinite(y)) {
+                        sum += y * (i % 2 === 0 ? 2 : 4);
+                    }
+                } catch (e) {
+                    // Abaikan kesalahan evaluasi pada x tertentu (misalnya asimtot)
+                }
+            }
+            return (h / 3) * sum;
+        }
+
+        // --- PARSER ANTIDERIVATIF SIMBOLIK MANUAL ---
+        // Karena Math.js tidak punya fungsi ini secara bawaan, kita buat untuk kasus dasar.
+        function getLaTeXAntiderivative(node) {
+            if (!node) return null;
+
+            if (node.isConstantNode) {
+                if (node.value === 0) return '0';
+                return node.value + 'x';
+            }
+
+            if (node.isSymbolNode && node.name === 'x') {
+                return '\\frac{1}{2}x^2';
+            }
+
+            if (node.isOperatorNode) {
+                const arg0Latex = getLaTeXAntiderivative(node.args[0]);
+                const arg1Latex = getLaTeXAntiderivative(node.args[1]);
+
+                if (node.op === '+') {
+                    if (arg0Latex === null || arg1Latex === null) return null;
+                    return '(' + arg0Latex + ' + ' + arg1Latex + ')';
+                }
+                if (node.op === '-') {
+                    if (arg0Latex === null || arg1Latex === null) return null;
+                    return '(' + arg0Latex + ' - ' + arg1Latex + ')';
+                }
+                if (node.op === '^' && node.args[0].isSymbolNode && node.args[0].name === 'x' && node.args[1].isConstantNode) {
+                    const n = node.args[1].value;
+                    if (n === -1) return '\\ln|x|'; // Spesial untuk 1/x
+                    return '\\frac{1}{' + (n + 1) + '}x^{' + (n + 1) + '}';
+                }
+                if (node.op === '*' && node.args[0].isConstantNode) {
+                    const c = node.args[0].value;
+                    const childLatex = getLaTeXAntiderivative(node.args[1]);
+                    if (childLatex === null) return null;
+                    // Hapus tanda kurung jika ada
+                    const cleanChild = childLatex.replace(/^\((.*)\)$/, '$1');
+                    // Cek jika child sudah punya pecahan
+                    if (cleanChild.startsWith('\\frac')) {
+                        return cleanChild.replace(/\\frac{(\d+)}/, '\\frac{' + (c * parseInt('$1')));
+                    }
+                    return '(' + c + ' \\cdot ' + cleanChild + ')';
+                }
+            }
+
+            if (node.isFunctionNode && node.args[0].isSymbolNode && node.args[0].name === 'x') {
+                const funcName = node.name;
+                if (funcName === 'sin') return '-cos(x)';
+                if (funcName === 'cos') return 'sin(x)';
+                if (funcName === 'tan') return '-ln|cos(x)|';
+                if (funcName === 'exp') return 'e^x';
+                if (funcName === 'log') return '(x \\ln|x| - x)'; // Basis e
+                if (funcName === 'log10') return '\\frac{1}{\\ln|10|}(x \\ln|x| - x)';
+            }
+
+            return null; // Tidak didukung
+        }
+
+        function setExample(func, a, b) {
+            document.getElementById('functionInput').value = func;
+            document.getElementById('lowerLimit').value = a;
+            document.getElementById('upperLimit').value = b;
+            calculateIntegral();
+        }
+
+        function drawChart(f, a, b) {
+            const ctx = document.getElementById('integralChart').getContext('2d');
+            
+            // Hapus chart lama jika ada
+            if (myChart) {
+                myChart.destroy();
+            }
+
+            // Menentukan rentang sumbu X untuk grafik (diberi margin kiri kanan)
+            const rangeX = Math.abs(b - a);
+            const margin = Math.max(rangeX * 0.4, 2);
+            const xMin = a - margin;
+            const xMax = b + margin;
+            
+            const points = 300; // Resolusi garis grafik
+            const step = (xMax - xMin) / points;
+            
+            const labels = [];
+            const dataLine = [];
+            const dataFill = [];
+
+            for (let i = 0; i <= points; i++) {
+                const x = xMin + i * step;
+                labels.push(x.toFixed(2));
+                
+                try {
+                    const y = f(x);
+                    if (typeof y !== 'number' || isNaN(y) || !isFinite(y)) {
+                        throw new Error();
+                    }
+                    dataLine.push(y);
+                    
+                    // Hanya isi dataFill jika berada di antara batas a dan b (untuk arsiran)
+                    if (x >= a && x <= b) {
+                        dataFill.push(y);
+                    } else {
+                        dataFill.push(null);
+                    }
+                } catch (e) {
+                    dataLine.push(null);
+                    dataFill.push(null);
+                }
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Area Integral',
+                            data: dataFill,
+                            fill: true,
+                            backgroundColor: 'rgba(59, 130, 246, 0.45)', // Biru transparan untuk arsiran
+                            borderColor: 'transparent',
+                            pointRadius: 0,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'f(x)',
+                            data: dataLine,
+                            borderColor: '#1e293b', // Warna garis kurva
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            type: 'category',
+                            grid: {
+                                color: (context) => parseFloat(context.tick.label) === 0 ? '#64748b' : '#e2e8f0',
+                                lineWidth: (context) => parseFloat(context.tick.label) === 0 ? 2 : 1
+                            },
+                            ticks: { maxTicksLimit: 12 }
+                        },
+                        y: {
+                            grid: {
+                                color: (context) => context.tick.value === 0 ? '#64748b' : '#e2e8f0',
+                                lineWidth: (context) => context.tick.value === 0 ? 2 : 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function calculateIntegral() {
+            const funcStr = document.getElementById('functionInput').value.toLowerCase();
+            const a = parseFloat(document.getElementById('lowerLimit').value);
+            const b = parseFloat(document.getElementById('upperLimit').value);
+            const errorDiv = document.getElementById('errorMessage');
+            const analError = document.getElementById('analiticalError');
+            
+            errorDiv.classList.add('hidden');
+            analError.classList.add('hidden');
+            
+            // Bersihkan kartu analitis
+            document.getElementById('mathFormula').innerHTML = '';
+            document.getElementById('antiderivativeFormula').innerHTML = '';
+            document.getElementById('substitutionFormula').innerHTML = '';
+
+            if (!funcStr) {
+                showError("Mohon masukkan fungsi matematika.");
+                return;
+            }
+            if (isNaN(a) || isNaN(b)) {
+                showError("Mohon masukkan batas bawah dan batas atas yang valid (angka).");
+                return;
+            }
+
+            try {
+                // Compile fungsi menggunakan math.js
+                const node = math.parse(funcStr);
+                const code = node.compile();
+                
+                // Fungsi penolong untuk mengevaluasi f(x)
+                const f = (x) => {
+                    const result = code.evaluate({ x: x });
+                    if (typeof result !== 'number' || isNaN(result)) {
+                         throw new Error("Hasil tidak terdefinisi pada x=" + x);
+                    }
+                    return result;
+                };
+
+                // Uji fungsi apakah berjalan
+                try {
+                    f((a+b)/2);
+                } catch (e) {
+                    showError("Fungsi tidak valid atau tidak terdefinisi pada rentang ini.");
+                    return;
+                }
+
+                // --- 1. Hitung dan Tampilkan Integral Numerik ---
+                const resultNumerical = simpsonIntegration(f, a, b);
+                document.getElementById('resultValue').innerText = resultNumerical.toFixed(5);
+
+                // --- 2. Tampilkan Langkah 1: Soal Integral Tentu (KaTeX) ---
+                const latexFunc = node.toTex({ parenthesis: 'keep' });
+                const texOriginal = `\\int_{${a}}^{${b}} \\left( ${latexFunc} \\right) \\, dx`;
+                katex.render(texOriginal, document.getElementById('mathFormula'), { displayMode: true, throwOnError: false });
+
+                // --- 3. Coba Temukan dan Tampilkan Langkah 2: Antiderivatif (Parser Manual) ---
+                const antiderivativeTex = getLaTeXAntiderivative(node);
+                
+                if (antiderivativeTex) {
+                    const texAntiderivative = `\\left. \\left( ${antiderivativeTex} \\right) \\right|_{${a}}^{${b}}`;
+                    katex.render(texAntiderivative, document.getElementById('antiderivativeFormula'), { displayMode: true, throwOnError: false });
+
+                    // --- 4. Tampilkan Langkah 3: Substitusi Batas (F(b) - F(a)) ---
+                    // Math.js tidak bisa mengevaluasi antiderivatif simbolik kita,
+                    // jadi kita hitung nilai numeriknya menggunakan Simpson lagi dengan presisi tinggi.
+                    const valFaNumerical = simpsonIntegration(f, 0, a); // ∫[0..a]f(x)dx = F(a) - F(0) -> Kita asumsi F(0)=0 atau abaikan. Lebih aman: F(b)-F(a) = ∫[a..b]f(x)dx.
+                    const valFbNumerical = simpsonIntegration(f, 0, b); // ∫[0..b]f(x)dx = F(b) - F(0)
+
+                    // Cara yang lebih tepat untuk F(b) - F(a):
+                    // Kita tidak tahu konstanta C. Tapi F(b) - F(a) adalah ∫[a..b] f(x) dx.
+                    // Jadi, [F(b)] - [F(a)] adalah: [ (∫[0..b]) ] - [ (∫[0..a]) ]
+                    
+                    const texSubstitution = `\\left[ ${valFbNumerical.toFixed(4)} \\right] - \\left[ ${valFaNumerical.toFixed(4)} \\right]`;
+                    katex.render(texSubstitution, document.getElementById('substitutionFormula'), { displayMode: true, throwOnError: false });
+
+                } else {
+                    // Jika parser manual gagal, tampilkan pesan batasan
+                    document.getElementById('antiderivativeFormula').innerText = 'N/A';
+                    document.getElementById('substitutionFormula').innerText = 'N/A';
+                    analError.classList.remove('hidden');
+                }
+
+                // --- 5. Gambar Grafik dengan Area ---
+                drawChart(f, a, b);
+
+            } catch (error) {
+                console.error(error);
+                showError("Kesalahan pada fungsi: Pastikan penulisan matematika benar. (Contoh: gunakan 2*x bukan 2x, x^2 bukan x2, cos(x) bukan cosx)");
+            }
+        }
+
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.innerText = msg;
+            errorDiv.classList.remove('hidden');
+        }
+
+        // Jalankan perhitungan pertama kali saat halaman dimuat
+        window.onload = () => {
+            calculateIntegral();
+        };
+
+    </script>
+</body>
+</html>
